@@ -17,9 +17,9 @@ If that doesnt work you may have to replace the Skolacz with your github user na
 6. Open folder
 7. Select datastam
 8. Select folder button
-12. Once selected in the lower left hand side of the screen you will see the same two arrows folowed by the branch symbol and main. That means you are on the main branch of out project. This is not where you make your edits. You will need to create your own branches to do your edits and then it will be merged into the main branch at the end. Please make sure your branch names are productive or else its a bitch to try nd figure out what exactly you changed.
+12. Once selected in the lower left hand side of the screen you will see the same two arrows folowed by the branch symbol and main. That means you are on the main branch of out project. This is not where you make your edits. You will need to create your own branches to do your edits and then it will be merged into the main branch at the end. Please make sure your branch names are productive or else its a bitch to try and figure out what exactly you changed.
 
-
+Every time you start a new editing session please run steps 1 and 2 in "how to make a branch" Its very important so that everything is up to date for everyone
 
 How to make a branch
 1. In powershell run the path to your datastam folder on your computer. Mine is C:\Users\sarak\datastam so in that case you put cd infront of it meaning the command is
