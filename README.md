@@ -4,7 +4,7 @@ Backend Lead - Tiffany
 Frontend Lead - Aiden
 AI/prompts lead - Khris
 Integration Lead - Brady
-And a QA & Doc Lead - Alex
+QA & Doc Lead - Alex
 
 
 1. Download this https://git-scm.com/install/windows
