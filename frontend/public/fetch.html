@@ -20,7 +20,7 @@
             <button id="capture-button" onclick="handleCapture()">Capture Story</button>
         </div>
 
-        <!-- F11: Loading spinner shown during capture (~60s) and generation (~15s) -->
+        <!-- Loading spinner shown during capture -->
         <div id="loading-spinner">
             <div class="spinner"></div>
             <p id="spinner-text">Connecting to Capture API... This may take up to 60 seconds.</p>
@@ -47,7 +47,7 @@
                 return;
             }
 
-            // Step 1: Capture the story
+            // Capture
             button.disabled = true;
             spinner.style.visibility = 'visible';
             spinnerText.textContent = 'Capturing story content and charts... This takes 30–60 seconds.';
@@ -64,7 +64,7 @@
                 return;
             }
 
-            // Step 2: Generate AI posts for all platforms
+            // Generate AI posts 
             spinnerText.textContent = 'Generating social media posts with AI...';
 
             const storyId = captureResult.story.id;

@@ -1,6 +1,6 @@
 const Api = {
 
-    // POST /api/stories/capture - Send a Datastam URL to be captured
+    // POST /api/stories/capture - Send Datastam URL
     async captureStory(targetUrl) {
         try {
             const response = await fetch('/api/stories/capture', {
@@ -14,7 +14,7 @@ const Api = {
         }
     },
 
-    // POST /api/generate - Generate AI posts for a captured story
+    // POST /api/generate - Generate AI posts
     async generatePosts(storyId, platforms) {
         try {
             const response = await fetch('/api/generate', {
@@ -28,7 +28,7 @@ const Api = {
         }
     },
 
-    // GET /api/stories - List all captured stories
+    // GET /api/stories - List captured stories
     async getStories() {
         try {
             const response = await fetch('/api/stories');
@@ -39,7 +39,7 @@ const Api = {
         }
     },
 
-    // GET /api/stories/:id - Get one story with full sections
+    // GET /api/stories/:id - Get story with full sections
     async getStory(id) {
         try {
             const response = await fetch(`/api/stories/${id}`);
@@ -50,7 +50,7 @@ const Api = {
         }
     },
 
-    // GET /api/posts - List posts, with optional query filters
+    // GET /api/posts - List posts
     async getPosts(filters = {}) {
         try {
             const params = new URLSearchParams();
@@ -66,7 +66,7 @@ const Api = {
         }
     },
 
-    // GET /api/posts/:id - Get a single post
+    // GET /api/posts/:id - Get single post
     async getPost(id) {
         try {
             const response = await fetch(`/api/posts/${id}`);
@@ -77,7 +77,7 @@ const Api = {
         }
     },
 
-    // PUT /api/posts/:id - Update a post's content, hashtags, status, etc.
+    // PUT /api/posts/:id - Update post's content, hashtags, status
     async updatePost(id, data) {
         try {
             const response = await fetch(`/api/posts/${id}`, {
@@ -92,7 +92,7 @@ const Api = {
         }
     },
 
-    // PUT /api/posts/:id/approve - Approve a draft post
+    // PUT /api/posts/:id/approve - Approve a draft
     async approvePost(id) {
         try {
             const response = await fetch(`/api/posts/${id}/approve`, { method: 'PUT' });
@@ -103,7 +103,7 @@ const Api = {
         }
     },
 
-    // DELETE /api/posts/:id - Delete a post
+    // DELETE /api/posts/:id - Delete
     async deletePost(id) {
         try {
             const response = await fetch(`/api/posts/${id}`, { method: 'DELETE' });
