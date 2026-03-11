@@ -7,6 +7,7 @@
     "doc": "docs"
   },
   "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
     "dev": "nodemon server/index.js",
     "start": "node server/index.js"
   },
@@ -23,6 +24,8 @@
   },
   "homepage": "https://github.com/Skolacz/datastam#readme",
   "dependencies": {
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1"
     "better-sqlite3": "^12.6.2",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
