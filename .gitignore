@@ -1,1 +1,3 @@
+node_modules/
+datastam.db
 .env
