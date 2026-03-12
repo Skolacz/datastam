@@ -1,4 +1,15 @@
 {
+  "dependencies": {
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1"'
+    "node-fetch": "^3.3.2"
+  },
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "nodemon server/index.js"
+  }
+}
+
   "name": "datastam",
   "version": "1.0.0",
   "description": "JOBS\r Backend Lead - Tiffany\r Frontend Lead - Aiden\r AI/prompts lead - Khris\r Integration Lead - Brady\r QA & Doc Lead - Alex",
