@@ -1,51 +1,118 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
+const db = require("../db/database");
+const captureService = require("../services/captureService");
 
-const db = require('../db/database');
-const captureStory = require('../services/captureService');
 
-router.post('/capture', async (req, res) => {
+// Capture story from Datastam
+router.post("/capture", async (req, res) => {
+
+  try {
 
     const { url } = req.body;
 
     if (!url) {
-        return res.status(400).json({ error: "URL required" });
+      return res.status(400).json({ error: "URL required" });
     }
 
-    try {
+    const data = await captureService.captureStory(url);
 
-        const data = await captureStory(url);
+    db.prepare(`
+      INSERT OR REPLACE INTO stories
+      (story_id, url, title, description, sections_json, total_charts)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(
+      data.storyId,
+      url,
+      data.title,
+      data.description,
+      JSON.stringify(data.sections),
+      data.totalCharts
+    );
 
-        const stmt = db.prepare(`
-            INSERT OR IGNORE INTO stories
-            (story_id, url, title, description, sections_json, total_charts)
-            VALUES (?, ?, ?, ?, ?, ?)
-        `);
+    const story = db.prepare(
+      "SELECT * FROM stories WHERE story_id=?"
+    ).get(data.storyId);
 
-        stmt.run(
-            data.storyId,
-            url,
-            data.title,
-            data.description,
-            JSON.stringify(data.sections),
-            data.totalCharts
-        );
+    res.json(story);
 
-        res.json({
-            message: "Story captured successfully",
-            story: data
-        });
+  } catch (error) {
 
-    } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Capture failed" });
 
-        console.error(error);
-
-        res.status(500).json({
-            error: "Capture failed"
-        });
-
-    }
+  }
 
 });
 
+
+// Get all stories
+router.get("/", (req, res) => {
+
+  const stories = db.prepare(
+    "SELECT * FROM stories ORDER BY captured_at DESC"
+  ).all();
+
+  res.json(stories);
+
+});
+
+
+// Get one story
+router.get("/:id", (req, res) => {
+
+  const story = db.prepare(
+    "SELECT * FROM stories WHERE id=?"
+  ).get(req.params.id);
+
+  if (!story) {
+    return res.status(404).json({ error: "Story not found" });
+  }
+
+  story.sections = JSON.parse(story.sections_json);
+
+  res.json(story);
+
+});
+
+
 module.exports = router;
+
+router.get("/:id/charts/:chartIndex", (req, res) => {
+
+  try {
+
+    const story = db.prepare(
+      "SELECT sections_json FROM stories WHERE id=?"
+    ).get(req.params.id);
+
+    if (!story) {
+      return res.status(404).send("Story not found");
+    }
+
+    const sections = JSON.parse(story.sections_json);
+
+    // Flatten all charts from sections
+    const charts = sections.flatMap(section => section.charts || []);
+
+    const chart = charts.find(c => c.index == req.params.chartIndex);
+
+    if (!chart) {
+      return res.status(404).send("Chart not found");
+    }
+
+    // Convert base64 image to buffer
+    const base64 = chart.base64.split(",")[1];
+    const buffer = Buffer.from(base64, "base64");
+
+    res.set("Content-Type", "image/png");
+    res.send(buffer);
+
+  } catch (err) {
+
+    console.error(err);
+    res.status(500).send("Chart retrieval failed");
+
+  }
+
+});
