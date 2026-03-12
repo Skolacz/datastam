@@ -77,3 +77,42 @@ router.get("/:id", (req, res) => {
 
 
 module.exports = router;
+
+router.get("/:id/charts/:chartIndex", (req, res) => {
+
+  try {
+
+    const story = db.prepare(
+      "SELECT sections_json FROM stories WHERE id=?"
+    ).get(req.params.id);
+
+    if (!story) {
+      return res.status(404).send("Story not found");
+    }
+
+    const sections = JSON.parse(story.sections_json);
+
+    // Flatten all charts from sections
+    const charts = sections.flatMap(section => section.charts || []);
+
+    const chart = charts.find(c => c.index == req.params.chartIndex);
+
+    if (!chart) {
+      return res.status(404).send("Chart not found");
+    }
+
+    // Convert base64 image to buffer
+    const base64 = chart.base64.split(",")[1];
+    const buffer = Buffer.from(base64, "base64");
+
+    res.set("Content-Type", "image/png");
+    res.send(buffer);
+
+  } catch (err) {
+
+    console.error(err);
+    res.status(500).send("Chart retrieval failed");
+
+  }
+
+});
