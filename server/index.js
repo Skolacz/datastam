@@ -1,7 +1,11 @@
 require("dotenv").config();
 
 const express = require("express");
+<<<<<<< HEAD
 const cors = require("cors");
+=======
+require('dotenv').config();
+>>>>>>> 1872d558d15841f444b855402963c55742846aea
 
 const storiesRoutes = require("./routes/stories");
 const postsRoutes = require("./routes/posts");
