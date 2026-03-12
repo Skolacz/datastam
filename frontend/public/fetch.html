@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Capture New Story</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="api-capture">
+        <h2>Capture Datastam Story</h2>
+        <p>Enter the URL of the Datastam story you want to turn into social posts.</p>
+
+        <div class="input-group">
+            <input type="url" id="datastam-url"
+                   placeholder="https://datastam.ai/story/your-story-slug"
+                   value="https://datastam.ai/story/nasa-s-2022-environmental-performance-index-epi-da-MxgTdVRWiF"
+                   required>
+            <button id="capture-button" onclick="handleCapture()">Capture Story</button>
+        </div>
+
+        <!-- Loading spinner shown during capture -->
+        <div id="loading-spinner">
+            <div class="spinner"></div>
+            <p id="spinner-text">Connecting to Capture API... This may take up to 60 seconds.</p>
+        </div>
+
+        <div id="status-message"></div>
+
+        <a href="index.html" class="back-link">&larr; Back to Dashboard</a>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        async function handleCapture() {
+            const url = document.getElementById('datastam-url').value.trim();
+            const statusBox = document.getElementById('status-message');
+            const spinner = document.getElementById('loading-spinner');
+            const spinnerText = document.getElementById('spinner-text');
+            const button = document.getElementById('capture-button');
+
+            // Basic validation
+            if (!url || !url.includes('datastam.ai')) {
+                statusBox.innerText = 'Please enter a valid datastam.ai URL.';
+                statusBox.className = 'status-error';
+                return;
+            }
+
+            // Capture
+            button.disabled = true;
+            spinner.style.visibility = 'visible';
+            spinnerText.textContent = 'Capturing story content and charts... This takes 30–60 seconds.';
+            statusBox.innerText = '';
+            statusBox.className = '';
+
+            const captureResult = await Api.captureStory(url);
+
+            if (!captureResult.success) {
+                spinner.style.visibility = 'hidden';
+                button.disabled = false;
+                statusBox.innerText = 'Capture failed: ' + (captureResult.error || 'Unknown error');
+                statusBox.className = 'status-error';
+                return;
+            }
+
+            // Generate AI posts 
+            spinnerText.textContent = 'Generating social media posts with AI...';
+
+            const storyId = captureResult.story.id;
+            const genResult = await Api.generatePosts(storyId, ['linkedin', 'twitter', 'instagram']);
+
+            spinner.style.visibility = 'hidden';
+            button.disabled = false;
+
+            if (genResult.success) {
+                statusBox.innerHTML =
+                    `Done! Generated <strong>${genResult.count}</strong> draft posts. ` +
+                    `<a href="index.html">View on Dashboard &rarr;</a>`;
+                statusBox.className = 'status-success';
+            } else {
+                statusBox.innerHTML =
+                    `Story captured, but post generation failed: ${genResult.error || 'Unknown error'}. ` +
+                    `<a href="index.html">View story on Dashboard &rarr;</a>`;
+                statusBox.className = 'status-error';
+            }
+        }
+    </script>
+</body>
+</html>
