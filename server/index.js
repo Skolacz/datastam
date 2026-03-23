@@ -1,25 +1,28 @@
-require('dotenv').config();
-const express = require('express');
+require("dotenv").config();
 
-require('./db/database');
+const express = require("express");
 
-const storiesRoutes = require('./routes/stories');
+const storiesRoutes = require("./routes/stories");
+const postsRoutes = require("./routes/posts");
 
 const app = express();
 
+app.use(cors());
 app.use(express.json());
 
-app.use('/api/stories', storiesRoutes);
 
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'Server running 🚀' });
+// API routes
+app.use("/api/stories", storiesRoutes);
+app.use("/api/posts", postsRoutes);
+
+
+// health check
+app.get("/health", (req, res) => {
+  res.json({ status: "ok" });
 });
+
 
 const PORT = process.env.PORT || 4000;
-
-app.get('/', (req, res) => {
-  res.send('this works !!🚀');
-});
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
