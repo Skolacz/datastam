@@ -1,31 +1,19 @@
 {
   "name": "datastam",
   "version": "1.0.0",
-  "description": "JOBS\r Backend Lead - Tiffany\r Frontend Lead - Aiden\r AI/prompts lead - Khris\r Integration Lead - Brady\r QA & Doc Lead - Alex",
-  "main": "index.js",
-  "directories": {
-    "doc": "docs"
-  },
+  "description": "JOBS Backend Lead - Tiffany | Frontend Lead - Aiden | AI/prompts lead - Khris | Integration Lead - Brady | QA & Doc Lead - Alex",
+  "main": "server/index.js",
+  "type": "commonjs",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
     "dev": "nodemon server/index.js",
     "start": "node server/index.js"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Skolacz/datastam.git"
+    "url": "https://github.com/Skolacz/datastam.git"
   },
-  "keywords": [],
-  "author": "",
   "license": "ISC",
-  "type": "commonjs",
-  "bugs": {
-    "url": "https://github.com/Skolacz/datastam/issues"
-  },
-  "homepage": "https://github.com/Skolacz/datastam#readme",
   "dependencies": {
-    "dotenv": "^17.3.1",
-    "express": "^5.2.1"
     "better-sqlite3": "^12.6.2",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",

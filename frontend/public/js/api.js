@@ -1,6 +1,22 @@
+/**
+ * api.js
+ * Thin wrapper around all backend API endpoints.
+ * Every method returns a plain JavaScript object (parsed JSON) or, on network
+ * failure, a fallback value so callers don't need to handle exceptions.
+ *
+ * All endpoints are relative (e.g. /api/posts) so they resolve against whatever host is serving the frontend
+ */
 const Api = {
 
-    // POST /api/stories/capture - Send Datastam URL
+    // -- Story capture ------------------------------------------
+
+    /**
+     * Sends Datastam story URL to backend, which calls Capture Tool API, extracts sections/charts, saves to database
+     *
+     * POST /api/stories/capture
+     * @param {string} targetUrl - valid datastam.ai story URL
+     * @returns {{ success: boolean, story: object, error?: string }}
+     */
     async captureStory(targetUrl) {
         try {
             const response = await fetch('/api/stories/capture', {
@@ -14,7 +30,17 @@ const Api = {
         }
     },
 
-    // POST /api/generate - Generate AI posts
+    // -- AI generation ---------------------------------------------
+
+    /**
+     * Asks backend to run Claude on all sections of a story
+     * save the resulting draft posts to database.
+     *
+     * POST /api/generate
+     * @param {string}   storyId   - The story's integer id (from the DB)
+     * @param {string[]} platforms - e.g. ['linkedin', 'twitter', 'instagram']
+     * @returns {{ success: boolean, count: number, error?: string }}
+     */
     async generatePosts(storyId, platforms) {
         try {
             const response = await fetch('/api/generate', {
@@ -28,7 +54,15 @@ const Api = {
         }
     },
 
-    // GET /api/stories - List captured stories
+    // -- Story management ---------------------------------
+
+    /**
+     * Returns all captured stories (id, title, url, captured_at, etc.)
+     * without full sections JSON
+     *
+     * GET /api/stories
+     * @returns {object[]} - Array of story objects. empty array on error
+     */
     async getStories() {
         try {
             const response = await fetch('/api/stories');
@@ -39,7 +73,13 @@ const Api = {
         }
     },
 
-    // GET /api/stories/:id - Get story with full sections
+    /**
+     * Returns single story including full sections array (text, insights, chart indices). Used by editor
+     *
+     * GET /api/stories/:id
+     * @param {number} id - Story id
+     * @returns {object|null} - Story object, or null on error
+     */
     async getStory(id) {
         try {
             const response = await fetch(`/api/stories/${id}`);
@@ -50,13 +90,22 @@ const Api = {
         }
     },
 
-    // GET /api/posts - List posts
+    // -- Post management -----------------------------------------
+
+    /**
+     * Returns array of posts
+     *
+     * GET /api/posts?platform=linkedin&status=draft
+     * @param {{ platform?: string, status?: string, storyId?: number }} filters
+     * @returns {object[]} - Array of post objects. empty array on error
+     */
     async getPosts(filters = {}) {
         try {
             const params = new URLSearchParams();
+            // Only append filter when not default 'all'
             if (filters.platform && filters.platform !== 'all') params.set('platform', filters.platform);
-            if (filters.status && filters.status !== 'all') params.set('status', filters.status);
-            if (filters.storyId) params.set('storyId', filters.storyId);
+            if (filters.status   && filters.status   !== 'all') params.set('status',   filters.status);
+            if (filters.storyId)                                params.set('storyId',  filters.storyId);
 
             const response = await fetch(`/api/posts?${params.toString()}`);
             return await response.json();
@@ -66,7 +115,13 @@ const Api = {
         }
     },
 
-    // GET /api/posts/:id - Get single post
+    /**
+     * Returns single post by id with all fields.
+     *
+     * GET /api/posts/:id
+     * @param {number} id - Post id
+     * @returns {object|null} - Post object or null on error
+     */
     async getPost(id) {
         try {
             const response = await fetch(`/api/posts/${id}`);
@@ -77,7 +132,15 @@ const Api = {
         }
     },
 
-    // PUT /api/posts/:id - Update post's content, hashtags, status
+    /**
+     * Updates post's editable fields.
+     * Pass only fields user wants to change
+     *
+     * PUT /api/posts/:id
+     * @param {number} id   - Post id
+     * @param {{ content?: string, hashtags?: string, status?: string }} data
+     * @returns {object} - Updated post, or { error } on failure
+     */
     async updatePost(id, data) {
         try {
             const response = await fetch(`/api/posts/${id}`, {
@@ -92,7 +155,14 @@ const Api = {
         }
     },
 
-    // PUT /api/posts/:id/approve - Approve a draft
+    /**
+     * Advances a post's status from 'draft' -> 'approved'
+     * Separate from updatePost to make approval intent explicit
+     *
+     * PUT /api/posts/:id/approve
+     * @param {number} id - Post id
+     * @returns {object} - Updated post, or { error } on failure
+     */
     async approvePost(id) {
         try {
             const response = await fetch(`/api/posts/${id}/approve`, { method: 'PUT' });
@@ -103,7 +173,32 @@ const Api = {
         }
     },
 
-    // DELETE /api/posts/:id - Delete
+    /**
+     * Publishes approved post to its social platform via buffer
+     * backend sends the post to buffer and updates database status to 'posted'
+     *
+     * PUT /api/posts/:id/publish
+     * @param {number} id - Post id (must have status 'approved')
+     * @returns {object} - Result with buffer_update_id, or { error } on failure
+     */
+    async publishPost(id) {
+        try {
+            const response = await fetch(`/api/posts/${id}/publish`, { method: 'PUT' });
+            return await response.json();
+        } catch (e) {
+            console.error('publishPost error:', e);
+            return { error: e.message };
+        }
+    },
+
+    /**
+     * Permanently deletes post from the database
+     * dashboard always shows confirm dialog before calling
+     *
+     * DELETE /api/posts/:id
+     * @param {number} id - Post id
+     * @returns {object} - { success: true } or { error } on failure
+     */
     async deletePost(id) {
         try {
             const response = await fetch(`/api/posts/${id}`, { method: 'DELETE' });

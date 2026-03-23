@@ -1,20 +1,35 @@
 <!DOCTYPE html>
+<!--
+    index.html - Datastam Dashboard
+    Main view of the application.
+
+      api.js      - defines the api object
+      dashboard.js - uses api, defines allPosts, refreshPosts, escapeHtml
+      editor.js   - uses api, allPosts, refreshPosts, escapeHtml from above
+-->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Datastam Dashboard</title>
     <link rel="stylesheet" href="css/styles.css">
+    <!-- Montserrat for UI text, Roboto Mono for code/monospace inputs -->
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
 </head>
 <body class="dashboard-page">
+
+    <!-- Top bar: app title and "New Story" link to the capture page -->
     <header class="dashboard-header">
-        <h1>Social Media Insights</h1>
+        <div>
+        <h1>Datastam Social Media Dashboard</h1>
+        <p class="dashboard-subtitle">Review, Edit, and Publish your generated posts</p>
+        </div>
         <a href="fetch.html" class="btn-new">+ New Story</a>
     </header>
 
     <main>
-        <!-- Filter Sidebar -->
+
+        <!-- Filter Sidebar:  -->
         <aside class="filters-sidebar">
             <h3>Filters</h3>
 
@@ -35,26 +50,35 @@
             </select>
         </aside>
 
-        <!-- Post Cards Grid -->
+        <!-- Posts grid: cards are created here by dashboard.js -->
         <section>
             <div id="posts-grid" class="posts-grid">
-                <!-- Cards injected by dashboard.js -->
+                <!-- Cards created by dashboard.js renderPosts() -->
             </div>
+
+            <!-- Shown while initial getPosts() call is active -->
             <div id="loader" class="hidden">Loading posts...</div>
+
+            <!-- Shown when the database contains no posts -->
             <div id="empty-state" class="hidden">
                 <p>No posts yet. <a href="fetch.html">Capture a story</a> to get started.</p>
             </div>
         </section>
+
     </main>
 
-    <!-- Modal for the Side-by-Side Editor -->
+    <!-- Editor menu: hidden until openEditor is called
+         The overlay div closes menu when clicked (editor.js closeEditor) -->
     <div id="editor-modal" class="modal hidden">
         <div class="modal-overlay" onclick="closeEditor()"></div>
+        <!-- editor.js puts the split-view layout into this container -->
         <div id="editor-container" class="modal-content"></div>
     </div>
 
+    <!-- Script order (plz dont change or bad things happen ;n;) -->
     <script src="js/api.js"></script>
     <script src="js/dashboard.js"></script>
     <script src="js/editor.js"></script>
+
 </body>
 </html>

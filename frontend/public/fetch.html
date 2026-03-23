@@ -1,4 +1,11 @@
 <!DOCTYPE html>
+<!--
+    fetch.html - Capture New Story
+    Lets the user paste a Datastam story URL and select which platforms to generate posts for
+      - Calls POST /api/stories/capture (via Api.captureStory)
+      - Calls POST /api/generate (via Api.generatePosts)
+      - Shows a success or error message with a link back to the dashboard
+-->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -8,24 +15,49 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="api-capture">
-        <h2>Capture Datastam Story</h2>
-        <p>Enter the URL of the Datastam story you want to turn into social posts.</p>
 
+    <div class="api-capture">
+        <h2>Datastam Story Captureinator</h2>
+        <p>Enter the URL of the Datastam story you want to turn into social media posts.</p>
+
+        <!-- URL input -->
         <div class="input-group">
             <input type="url" id="datastam-url"
                    placeholder="https://datastam.ai/story/your-story-slug"
                    value="https://datastam.ai/story/nasa-s-2022-environmental-performance-index-epi-da-MxgTdVRWiF"
                    required>
-            <button id="capture-button" onclick="handleCapture()">Capture Story</button>
         </div>
 
-        <!-- Loading spinner shown during capture -->
+        <!-- Platform selection
+             All three checked by default - user unchecks any they don't need. -->
+        <div class="platform-select">
+            <p class="platform-select-label">Generate posts for:</p>
+            <div class="platform-checkboxes">
+                <label class="platform-checkbox-label">
+                    <input type="checkbox" id="platform-linkedin" value="linkedin" checked>
+                    <span class="platform-badge linkedin">LinkedIn</span>
+                </label>
+                <label class="platform-checkbox-label">
+                    <input type="checkbox" id="platform-twitter" value="twitter" checked>
+                    <span class="platform-badge twitter">Twitter/X</span>
+                </label>
+                <label class="platform-checkbox-label">
+                    <input type="checkbox" id="platform-instagram" value="instagram" checked>
+                    <span class="platform-badge instagram">Instagram</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Submit -->
+        <button id="capture-button" onclick="handleCapture()">Capture Story</button>
+
+        <!-- Spinner  -->
         <div id="loading-spinner">
             <div class="spinner"></div>
             <p id="spinner-text">Connecting to Capture API... This may take up to 60 seconds.</p>
         </div>
 
+        <!-- Status message: success or error after the process completes -->
         <div id="status-message"></div>
 
         <a href="index.html" class="back-link">&larr; Back to Dashboard</a>
@@ -33,24 +65,47 @@
 
     <script src="js/api.js"></script>
     <script>
+        /**
+         * handleCapture — click handler for the "Capture Story" button.
+         *
+         * - Validate the URL (must be datastam.ai link)
+         * - Collect selected platforms from checkboxes
+         * - Validate at least one platform is checked
+         * - Call Api.captureStory() - waits 30-60s for backend
+         * - Call Api.generatePosts() with only user-selected platforms
+         * - Show success or error message with link to the dashboard
+         */
         async function handleCapture() {
-            const url = document.getElementById('datastam-url').value.trim();
-            const statusBox = document.getElementById('status-message');
-            const spinner = document.getElementById('loading-spinner');
-            const spinnerText = document.getElementById('spinner-text');
-            const button = document.getElementById('capture-button');
+            const url        = document.getElementById('datastam-url').value.trim();
+            const statusBox  = document.getElementById('status-message');
+            const spinner    = document.getElementById('loading-spinner');
+            const spinnerTxt = document.getElementById('spinner-text');
+            const button     = document.getElementById('capture-button');
 
-            // Basic validation
+            // -- Validate the URL ------------------------------------
             if (!url || !url.includes('datastam.ai')) {
                 statusBox.innerText = 'Please enter a valid datastam.ai URL.';
                 statusBox.className = 'status-error';
                 return;
             }
 
-            // Capture
+            // -- Collect selected platforms -----------------------------
+            // Filter three platform ids to only ones with checkbox checked
+            const platforms = ['linkedin', 'twitter', 'instagram'].filter(p =>
+                document.getElementById(`platform-${p}`).checked
+            );
+
+            // -- Validate at least one platform is selected ------------
+            if (platforms.length === 0) {
+                statusBox.innerText = 'Please select at least one platform.';
+                statusBox.className = 'status-error';
+                return;
+            }
+
+            // -- Capture story content and charts ------------------
             button.disabled = true;
             spinner.style.visibility = 'visible';
-            spinnerText.textContent = 'Capturing story content and charts... This takes 30–60 seconds.';
+            spinnerTxt.textContent = 'Capturing story content and charts... This takes 30–60 seconds.';
             statusBox.innerText = '';
             statusBox.className = '';
 
@@ -64,18 +119,20 @@
                 return;
             }
 
-            // Generate AI posts 
-            spinnerText.textContent = 'Generating social media posts with AI...';
+            // -- Generate AI posts, selected platforms only ------
+            spinnerTxt.textContent = `Generating posts for ${platforms.join(', ')}...`;
 
-            const storyId = captureResult.story.id;
-            const genResult = await Api.generatePosts(storyId, ['linkedin', 'twitter', 'instagram']);
+            const storyId   = captureResult.story.id;
+            const genResult = await Api.generatePosts(storyId, platforms);
 
+            // -- Show result yippeeeeeeeeeeeeeeeeeeeeee ------------------------------------------
             spinner.style.visibility = 'hidden';
             button.disabled = false;
 
             if (genResult.success) {
                 statusBox.innerHTML =
-                    `Done! Generated <strong>${genResult.count}</strong> draft posts. ` +
+                    `Done! Generated <strong>${genResult.count}</strong> draft posts for ` +
+                    `<strong>${platforms.join(', ')}</strong>. ` +
                     `<a href="index.html">View on Dashboard &rarr;</a>`;
                 statusBox.className = 'status-success';
             } else {
@@ -86,5 +143,6 @@
             }
         }
     </script>
+
 </body>
 </html>
