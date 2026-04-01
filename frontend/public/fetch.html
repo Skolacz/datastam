@@ -111,7 +111,8 @@
 
             const captureResult = await Api.captureStory(url);
 
-            if (!captureResult.success) {
+            // Backend returns story directly - if it has id: it worked :D
+            if (!captureResult || captureResult.error) {
                 spinner.style.visibility = 'hidden';
                 button.disabled = false;
                 statusBox.innerText = 'Capture failed: ' + (captureResult.error || 'Unknown error');
@@ -122,7 +123,7 @@
             // -- Generate AI posts, selected platforms only ------
             spinnerTxt.textContent = `Generating posts for ${platforms.join(', ')}...`;
 
-            const storyId   = captureResult.story.id;
+            const storyId   = captureResult.id;
             const genResult = await Api.generatePosts(storyId, platforms);
 
             // -- Show result yippeeeeeeeeeeeeeeeeeeeeee ------------------------------------------
@@ -131,7 +132,7 @@
 
             if (genResult.success) {
                 statusBox.innerHTML =
-                    `Done! Generated <strong>${genResult.count}</strong> draft posts for ` +
+                    `Done! Generated <strong>${genResult.created}</strong> draft posts for ` +
                     `<strong>${platforms.join(', ')}</strong>. ` +
                     `<a href="index.html">View on Dashboard &rarr;</a>`;
                 statusBox.className = 'status-success';
