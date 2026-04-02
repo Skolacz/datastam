@@ -2,15 +2,11 @@ const express = require("express");
 const router = express.Router();
 const db = require("../db/database");
 
-
 // Generate placeholder posts
 router.post("/generate", (req, res) => {
-
   const { storyId, platforms } = req.body;
 
-  const story = db.prepare(
-    "SELECT * FROM stories WHERE id=?"
-  ).get(storyId);
+  const story = db.prepare("SELECT * FROM stories WHERE id=?").get(storyId);
 
   if (!story) {
     return res.status(404).json({ error: "Story not found" });
@@ -21,15 +17,8 @@ router.post("/generate", (req, res) => {
   let created = 0;
 
   sections.forEach((section, index) => {
-
     platforms.forEach(platform => {
-
-      const content =
-`📊 ${story.title}
-
-${section.text.slice(0,120)}...
-
-#data #analytics`;
+      const content = `📊 ${story.title}\n\n${section.text.slice(0,120)}...\n\n#data #analytics`;
 
       db.prepare(`
         INSERT INTO posts
@@ -44,19 +33,14 @@ ${section.text.slice(0,120)}...
       );
 
       created++;
-
     });
-
   });
 
   res.json({ success: true, created });
-
 });
-
 
 // List posts
 router.get("/", (req, res) => {
-
   const { platform, status, storyId } = req.query;
 
   let query = "SELECT * FROM posts WHERE 1=1";
@@ -78,51 +62,135 @@ router.get("/", (req, res) => {
   }
 
   const posts = db.prepare(query).all(...params);
-
   res.json(posts);
-
 });
-
 
 // Approve post
 router.put("/:id/approve", (req, res) => {
-
-  db.prepare(`
-    UPDATE posts
-    SET status='approved'
-    WHERE id=?
-  `).run(req.params.id);
-
+  db.prepare("UPDATE posts SET status='approved' WHERE id=?").run(req.params.id);
   res.json({ success: true });
-
 });
-
 
 // Update post (editor)
 router.put("/:id", (req, res) => {
-
   const { content, hashtags } = req.body;
-
   db.prepare(`
     UPDATE posts
     SET content=?, hashtags=?, updated_at=CURRENT_TIMESTAMP
     WHERE id=?
   `).run(content, hashtags, req.params.id);
-
   res.json({ success: true });
-
 });
-
 
 // Delete post
 router.delete("/:id", (req, res) => {
-
-  db.prepare(
-    "DELETE FROM posts WHERE id=?"
-  ).run(req.params.id);
-
+  db.prepare("DELETE FROM posts WHERE id=?").run(req.params.id);
   res.json({ success: true });
+});
 
+// ------------------------------
+// Claude AI post generation
+// ------------------------------
+const promptTemplates = require('../prompts/promptTemplates');
+const { Anthropic } = require('@anthropic-ai/sdk');  // ✅ fixed import
+const client = new Anthropic({ apiKey: process.env.CLAUDE_API_KEY });  // ✅ fixed constructor
+
+router.post('/generate-ai', async (req, res) => {
+  try {
+    const { storyId, platforms } = req.body;
+
+    const story = db.prepare('SELECT * FROM stories WHERE id = ?').get(storyId);
+    if (!story) return res.status(404).json({ error: 'Story not found' });
+
+    const sections = JSON.parse(story.sections_json);
+    const generatedPosts = [];
+
+    for (const section of sections) {
+      for (const platform of platforms) {
+        const template = promptTemplates[platform];
+        const filledPrompt = template
+          .replace('{topic}', story.title)
+          .replace('{audience}', 'general audience')
+          .replace('{goal}', 'engagement')
+          .replace('{tone}', 'informative')
+          .replace('{keywords}', section.insights?.join(', ') || '')
+          + `\n\nSTORY SECTION:\n${section.text}\nKEY INSIGHTS:\n${section.insights?.join('\n') || ''}\nCRITICAL: Only use numbers that appear in the story. Do NOT make up data.`;
+
+        const response = await client.chat.completions.create({  // ✅ updated per SDK
+          model: 'claude-sonnet-4-20250514',
+          messages: [{ role: 'user', content: filledPrompt }],
+          max_tokens_to_sample: 1024
+        });
+
+        const content = response?.completion || '';
+
+        db.prepare(`
+          INSERT INTO posts
+          (story_id, platform, content, section_index, status, created_at, updated_at)
+          VALUES (?, ?, ?, ?, 'draft', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+        `).run(story.id, platform, content, section.index);
+
+        generatedPosts.push({ platform, content, sectionIndex: section.index });
+      }
+    }
+
+    res.json({ success: true, posts: generatedPosts });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to generate posts' });
+  }
+});
+
+// Regenerate a post using Claude AI
+router.post('/:id/regenerate', async (req, res) => {
+  try {
+    const postId = req.params.id;
+
+    // fetch post from DB
+    const post = db.prepare('SELECT * FROM posts WHERE id = ?').get(postId);
+    if (!post) return res.status(404).json({ error: 'Post not found' });
+
+    // fetch story section
+    const story = db.prepare('SELECT * FROM stories WHERE id = ?').get(post.story_id);
+    if (!story) return res.status(404).json({ error: 'Story not found' });
+
+    const sections = JSON.parse(story.sections_json);
+    const section = sections[post.section_index];
+    if (!section) return res.status(404).json({ error: 'Section not found' });
+
+    // get template for this platform
+    const template = promptTemplates[post.platform];
+    const filledPrompt = template
+      .replace('{topic}', story.title)
+      .replace('{audience}', 'general audience')
+      .replace('{goal}', 'engagement')
+      .replace('{tone}', 'informative')
+      .replace('{keywords}', section.insights.join(', '))
+      + `\n\nSTORY SECTION:\n${section.text}\nKEY INSIGHTS:\n${section.insights.join('\n')}\nCRITICAL: Only use numbers that appear in the story. Do NOT make up data.`;
+
+    // call Claude AI
+    const response = await client.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      messages: [{ role: 'user', content: filledPrompt }],
+      max_tokens: 1024
+    });
+
+    const newContent = response?.content?.[0]?.text || '';
+
+    // update post content in DB
+    db.prepare(`
+      UPDATE posts
+      SET content = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).run(newContent, postId);
+
+    res.json({ success: true, postId, newContent });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to regenerate post' });
+  }
 });
 
 module.exports = router;

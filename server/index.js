@@ -1,5 +1,6 @@
 require("dotenv").config();
 
+const cors = require('cors');  // ✅ add this line
 const express = require("express");
 
 const storiesRoutes = require("./routes/stories");
