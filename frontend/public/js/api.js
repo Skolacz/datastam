@@ -6,6 +6,10 @@
  *
  * All endpoints are relative (e.g. /api/posts) so they resolve against whatever host is serving the frontend
  */
+// IMPORTANT: point frontend to backend explicitly
+// (This is the ONLY addition — everything else is untouched)
+const API_BASE = "http://localhost:4000";
+
 const Api = {
 
     // -- Story capture ------------------------------------------
@@ -19,7 +23,7 @@ const Api = {
      */
     async captureStory(targetUrl) {
         try {
-            const response = await fetch('/api/stories/capture', {
+            const response = await fetch(`${API_BASE}/api/stories/capture`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ url: targetUrl })
@@ -43,7 +47,7 @@ const Api = {
      */
     async generatePosts(storyId, platforms) {
         try {
-            const response = await fetch('/api/posts/generate', {
+            const response = await fetch(`${API_BASE}/api/posts/generate`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ storyId, platforms })
@@ -65,7 +69,7 @@ const Api = {
      */
     async getStories() {
         try {
-            const response = await fetch('/api/stories');
+            const response = await fetch(`${API_BASE}/api/stories`);
             return await response.json();
         } catch (e) {
             console.error('getStories error:', e);
@@ -82,7 +86,7 @@ const Api = {
      */
     async getStory(id) {
         try {
-            const response = await fetch(`/api/stories/${id}`);
+            const response = await fetch(`${API_BASE}/api/stories/${id}`);
             return await response.json();
         } catch (e) {
             console.error('getStory error:', e);
@@ -107,7 +111,7 @@ const Api = {
             if (filters.status   && filters.status   !== 'all') params.set('status',   filters.status);
             if (filters.storyId)                                params.set('storyId',  filters.storyId);
 
-            const response = await fetch(`/api/posts?${params.toString()}`);
+            const response = await fetch(`${API_BASE}/api/posts?${params.toString()}`);
             return await response.json();
         } catch (e) {
             console.error('getPosts error:', e);
@@ -124,7 +128,7 @@ const Api = {
      */
     async getPost(id) {
         try {
-            const response = await fetch(`/api/posts/${id}`);
+            const response = await fetch(`${API_BASE}/api/posts/${id}`);
             return await response.json();
         } catch (e) {
             console.error('getPost error:', e);
@@ -143,7 +147,7 @@ const Api = {
      */
     async updatePost(id, data) {
         try {
-            const response = await fetch(`/api/posts/${id}`, {
+            const response = await fetch(`${API_BASE}/api/posts/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
@@ -165,7 +169,7 @@ const Api = {
      */
     async approvePost(id) {
         try {
-            const response = await fetch(`/api/posts/${id}/approve`, { method: 'PUT' });
+            const response = await fetch(`${API_BASE}/api/posts/${id}/approve`, { method: 'PUT' });
             return await response.json();
         } catch (e) {
             console.error('approvePost error:', e);
@@ -183,7 +187,7 @@ const Api = {
      */
     async publishPost(id) {
         try {
-            const response = await fetch(`/api/posts/${id}/publish`, { method: 'PUT' });
+            const response = await fetch(`${API_BASE}/api/posts/${id}/publish`, { method: 'PUT' });
             return await response.json();
         } catch (e) {
             console.error('publishPost error:', e);
@@ -201,7 +205,7 @@ const Api = {
      */
     async deletePost(id) {
         try {
-            const response = await fetch(`/api/posts/${id}`, { method: 'DELETE' });
+            const response = await fetch(`${API_BASE}/api/posts/${id}`, { method: 'DELETE' });
             return await response.json();
         } catch (e) {
             console.error('deletePost error:', e);

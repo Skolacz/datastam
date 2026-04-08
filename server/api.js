@@ -1,16 +1,15 @@
-
 // server/api.js
 
 const express = require("express");
-const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
-
+const fetch = (...args) =>
+  import("node-fetch").then(({ default: fetch }) => fetch(...args));
 
 const router = express.Router();
 
 // Base URL
 const BASE_URL = "https://data-story-to-post-api.up.railway.app";
 
-// Load API key from environment 
+// Load API key from environment
 const API_KEY = process.env.API_KEY || null;
 
 // -------------
@@ -24,13 +23,13 @@ router.get("/health", async (req, res) => {
   } catch (err) {
     res.status(500).json({
       error: "Health check failed",
-      details: err.message
+      details: err.message,
     });
   }
 });
 
 // -----------------
-// Capture Endpoint
+// Capture Endpoint (raw)
 // -----------------
 router.post("/capture", async (req, res) => {
   const { url } = req.body;
@@ -44,9 +43,9 @@ router.post("/capture", async (req, res) => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        ...(API_KEY ? { "x-api-key": API_KEY } : {})
+        ...(API_KEY ? { "x-api-key": API_KEY } : {}),
       },
-      body: JSON.stringify({ url })
+      body: JSON.stringify({ url }),
     });
 
     const data = await response.json();
@@ -54,7 +53,7 @@ router.post("/capture", async (req, res) => {
     if (!response.ok) {
       return res.status(response.status).json({
         error: "Capture failed",
-        details: data
+        details: data,
       });
     }
 
@@ -62,12 +61,61 @@ router.post("/capture", async (req, res) => {
   } catch (err) {
     res.status(500).json({
       error: "Internal server error",
-      details: err.message
+      details: err.message,
+    });
+  }
+});
+
+// ------------------------------------------------------
+// Frontend expects: POST /api/stories/capture
+// This wraps the same capture logic but returns { success, story }
+// ------------------------------------------------------
+router.post("/stories/capture", async (req, res) => {
+  const { url } = req.body;
+
+  if (!url) {
+    return res
+      .status(400)
+      .json({ success: false, error: "Missing 'url' field" });
+  }
+
+  try {
+    const response = await fetch(`${BASE_URL}/api/capture`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(API_KEY ? { "x-api-key": API_KEY } : {}),
+      },
+      body: JSON.stringify({ url }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return res.status(response.status).json({
+        success: false,
+        error: "Capture failed",
+        details: data,
+      });
+    }
+
+    // For now, just pass through what the external API returns.
+    // Later you can insert into SQLite here.
+    return res.json({
+      success: true,
+      story: data,
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      error: "Internal server error",
+      details: err.message,
     });
   }
 });
 
 module.exports = router;
+
 
 
 //"npm start" to run server, then frontend can call /api/capture to capture data 
