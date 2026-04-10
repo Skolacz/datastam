@@ -1,9 +1,14 @@
+require("dotenv").config();
+const fetch = require("node-fetch");
+
 const BASE_URL = process.env.CAPTURE_API_URL;
 const API_KEY = process.env.CAPTURE_API_KEY;
 
-async function captureStory(url) {
+console.log("Capture URL:", BASE_URL);
+console.log("Capture KEY:", API_KEY);
 
-  const response = await fetch(`${BASE_URL}/api/capture`, {
+async function captureStory(url) {
+  const response = await fetch(BASE_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -18,12 +23,9 @@ async function captureStory(url) {
   }
 
   const data = await response.json();
-
   return data;
 }
 
 module.exports = {
   captureStory
 };
-
-console.log("Capture API:", process.env.CAPTURE_API_URL);
