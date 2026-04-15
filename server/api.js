@@ -116,18 +116,41 @@ router.post("/stories/capture", async (req, res) => {
 
 module.exports = router;
 
+// ------------------------------------------------------
+// Buffer: List connected profiles
+// ------------------------------------------------------
+router.get("/buffer/profiles", async (req, res) => {
+  try {
+    const response = await fetch(
+      `https://api.bufferapp.com/1/profiles.json?access_token=${process.env.BUFFER_ACCESS_TOKEN}`
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return res.status(response.status).json({
+        success: false,
+        error: "Failed to fetch Buffer profiles",
+        details: data
+      });
+    }
+
+    return res.json({
+      success: true,
+      profiles: data
+    });
+
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      error: "Internal server error",
+      details: err.message
+    });
+  }
+});
 
 
 //"npm start" to run server, then frontend can call /api/capture to capture data 
 //from a URL using the API key stored in .env file.
 
 //API KEY IS AVAILABLE AS process.env.API_KEY
-
-
-//FRONTEND USAGE IMPLEMENTATION <AIDAN>
-//fetch("/api/capture", {
-//  method: "POST",
-//  headers: { "Content-Type": "application/json" },
-//  body: JSON.stringify({ url })
-//});
-

@@ -4,7 +4,7 @@ const fs = require('fs');
 const { Anthropic } = require('@anthropic-ai/sdk');
 const promptTemplates = require('./prompts/promptTemplates');
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const client = new Anthropic({ apiKey: process.env.CLAUDE_API_KEY });
 
 const postsToGenerate = [
   { topic: 'AI in Education', audience: 'educators and edtech professionals', tone: 'professional', goal: 'engage and educate', keywords: 'AI, EdTech, learning' },

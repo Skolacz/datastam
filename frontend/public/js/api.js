@@ -211,5 +211,20 @@ const Api = {
             console.error('deletePost error:', e);
             return { error: e.message };
         }
+    },
+    /**
+     * Returns all connected Buffer profiles
+     *
+     * GET /api/buffer/profiles
+     * @returns {object} - List of Buffer profiles or { error } on failure
+     */
+    async getBufferProfiles() {
+        try {
+            const response = await fetch(`${API_BASE}/api/buffer/profiles`);
+            return await response.json();
+        } catch (e) {
+            return { success: false, error: e.message };
+        }
     }
 };
+
