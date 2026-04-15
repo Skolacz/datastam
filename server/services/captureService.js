@@ -1,5 +1,4 @@
 require("dotenv").config();
-const fetch = require("node-fetch");
 
 const BASE_URL = process.env.CAPTURE_API_URL;
 const API_KEY = process.env.CAPTURE_API_KEY;
