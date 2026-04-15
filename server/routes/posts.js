@@ -92,8 +92,7 @@ router.delete("/:id", (req, res) => {
 // Claude AI post generation
 // ------------------------------
 const promptTemplates = require('../prompts/promptTemplates');
-const { Anthropic } = require('@anthropic-ai/sdk');  // ✅ fixed import
-const client = new Anthropic({ apiKey: process.env.CLAUDE_API_KEY });  // ✅ fixed constructor
+
 
 router.post('/generate-ai', async (req, res) => {
   try {
@@ -116,13 +115,24 @@ router.post('/generate-ai', async (req, res) => {
           .replace('{keywords}', section.insights?.join(', ') || '')
           + `\n\nSTORY SECTION:\n${section.text}\nKEY INSIGHTS:\n${section.insights?.join('\n') || ''}\nCRITICAL: Only use numbers that appear in the story. Do NOT make up data.`;
 
-        const response = await client.chat.completions.create({  // ✅ updated per SDK
-          model: 'claude-sonnet-4-20250514',
-          messages: [{ role: 'user', content: filledPrompt }],
-          max_tokens_to_sample: 1024
-        });
+        const response = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": process.env.CLAUDE_API_KEY,
+            "anthropic-version": "2023-06-01"
+          },
+          body: JSON.stringify({
+            model: "claude-3-haiku-20240307",
+            max_tokens: 1024,
+            messages: [
+      { role: "user", content: filledPrompt }
+    ]
+  })
+});
 
-        const content = response?.completion || '';
+const data = await response.json();
+const content = data?.content?.[0]?.text || "";
 
         db.prepare(`
           INSERT INTO posts
@@ -170,13 +180,24 @@ router.post('/:id/regenerate', async (req, res) => {
       + `\n\nSTORY SECTION:\n${section.text}\nKEY INSIGHTS:\n${section.insights.join('\n')}\nCRITICAL: Only use numbers that appear in the story. Do NOT make up data.`;
 
     // call Claude AI
-    const response = await client.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      messages: [{ role: 'user', content: filledPrompt }],
-      max_tokens: 1024
-    });
+const response = await fetch("https://api.anthropic.com/v1/messages", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "x-api-key": process.env.CLAUDE_API_KEY,
+    "anthropic-version": "2023-06-01"
+  },
+  body: JSON.stringify({
+    model: "claude-3-haiku-20240307",
+    max_tokens: 1024,
+    messages: [
+      { role: "user", content: filledPrompt }
+    ]
+  })
+});
 
-    const newContent = response?.content?.[0]?.text || '';
+const data = await response.json();
+const newContent = data?.content?.[0]?.text || "";
 
     // update post content in DB
     db.prepare(`

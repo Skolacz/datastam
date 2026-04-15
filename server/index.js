@@ -30,5 +30,7 @@ app.listen(PORT, () => {
 });
 
 console.log("Capture API:", process.env.API_KEY);
+console.log("Capture API:", process.env.CAPTURE_API_URL);
+console.log("Capture API Key:", process.env.CAPTURE_API_KEY);
 console.log("Claude API:", process.env.CLAUDE_API_KEY);
 
