@@ -1,20 +1,31 @@
 // server/api.js
-
+//Brady
 const express = require("express");
+
+// Dynamic import wrapper for node-fetch (because node-fetch v3 is ESM-only)
+// This allows you to still use fetch(...) inside a CommonJS project.
 const fetch = (...args) =>
   import("node-fetch").then(({ default: fetch }) => fetch(...args));
 
 const router = express.Router();
 
-// Base URL
+// ------------------------------------------------------
+// Base URL for the external Datastam Capture API
+// All capture requests are forwarded to this service.
+// ------------------------------------------------------
 const BASE_URL = "https://data-story-to-post-api.up.railway.app";
 
-// Load API key from environment
+// ------------------------------------------------------
+// Load API key from environment variables
+// Used for authenticated requests to the external capture API.
+// ------------------------------------------------------
 const API_KEY = process.env.API_KEY || null;
 
-// -------------
-// Health Check
-// -------------
+// ------------------------------------------------------
+// Health Check Route
+// Purpose: Allows frontend or monitoring tools to verify
+// that the external API is reachable and responding.
+// ------------------------------------------------------
 router.get("/health", async (req, res) => {
   try {
     const response = await fetch(`${BASE_URL}/api/health`);
@@ -28,12 +39,15 @@ router.get("/health", async (req, res) => {
   }
 });
 
-// -----------------
+// ------------------------------------------------------
 // Capture Endpoint (raw)
-// -----------------
+// Purpose: Directly forwards a URL to the external capture API.
+// This is a low-level endpoint used for debugging or testing.
+// ------------------------------------------------------
 router.post("/capture", async (req, res) => {
   const { url } = req.body;
 
+  // Validate input
   if (!url) {
     return res.status(400).json({ error: "Missing 'url' field" });
   }
@@ -50,6 +64,7 @@ router.post("/capture", async (req, res) => {
 
     const data = await response.json();
 
+    // Forward error from external API
     if (!response.ok) {
       return res.status(response.status).json({
         error: "Capture failed",
@@ -57,6 +72,7 @@ router.post("/capture", async (req, res) => {
       });
     }
 
+    // Return raw capture data
     res.json(data);
   } catch (err) {
     res.status(500).json({
@@ -67,12 +83,20 @@ router.post("/capture", async (req, res) => {
 });
 
 // ------------------------------------------------------
-// Frontend expects: POST /api/stories/capture
-// This wraps the same capture logic but returns { success, story }
+// Frontend Capture Wrapper
+// Route: POST /api/stories/capture
+//
+// Purpose:
+// The frontend expects a specific response format:
+//   { success: true, story: {...} }
+//
+// This wraps the raw capture endpoint and normalizes the output.
+// Later, this is where you will insert the story into SQLite.
 // ------------------------------------------------------
 router.post("/stories/capture", async (req, res) => {
   const { url } = req.body;
 
+  // Validate input
   if (!url) {
     return res
       .status(400)
@@ -91,6 +115,7 @@ router.post("/stories/capture", async (req, res) => {
 
     const data = await response.json();
 
+    // Forward error from external API
     if (!response.ok) {
       return res.status(response.status).json({
         success: false,
@@ -99,8 +124,7 @@ router.post("/stories/capture", async (req, res) => {
       });
     }
 
-    // For now, just pass through what the external API returns.
-    // Later you can insert into SQLite here.
+    // Return normalized structure for frontend
     return res.json({
       success: true,
       story: data,
@@ -114,10 +138,17 @@ router.post("/stories/capture", async (req, res) => {
   }
 });
 
-module.exports = router;
-
 // ------------------------------------------------------
-// Buffer: List connected profiles
+// Buffer: List Connected Profiles
+//
+// Purpose:
+// Attempts to fetch connected social profiles from Buffer.
+// Requires a valid Buffer API access token (paid plan only).
+//
+// NOTE:
+// Free Buffer accounts cannot use this API.
+// If the token is invalid, Buffer returns:
+//   "OIDC tokens are not accepted for direct API access"
 // ------------------------------------------------------
 router.get("/buffer/profiles", async (req, res) => {
   try {
@@ -149,8 +180,14 @@ router.get("/buffer/profiles", async (req, res) => {
   }
 });
 
+// ------------------------------------------------------
+// Export router so index.js can mount it under /api
+// ------------------------------------------------------
+module.exports = router;
 
-//"npm start" to run server, then frontend can call /api/capture to capture data 
-//from a URL using the API key stored in .env file.
-
-//API KEY IS AVAILABLE AS process.env.API_KEY
+// ------------------------------------------------------
+// Notes:
+// - Run backend with "npm start"
+// - Frontend calls /api/stories/capture to capture story data
+// - API key is loaded from .env via process.env.API_KEY
+// ------------------------------------------------------
