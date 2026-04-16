@@ -73,12 +73,12 @@ router.put("/:id/approve", (req, res) => {
 
 // Update post (editor)
 router.put("/:id", (req, res) => {
-  const { content, hashtags } = req.body;
+  const { content, hashtags, status } = req.body;
   db.prepare(`
-    UPDATE posts
-    SET content=?, hashtags=?, updated_at=CURRENT_TIMESTAMP
-    WHERE id=?
-  `).run(content, hashtags, req.params.id);
+  UPDATE posts
+  SET content=?, hashtags=?, status=COALESCE(?, status), updated_at=CURRENT_TIMESTAMP
+  WHERE id=?
+`).run(content, hashtags, status || null, req.params.id);
   res.json({ success: true });
 });
 
